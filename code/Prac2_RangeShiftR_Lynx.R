@@ -1,5 +1,5 @@
 # Example RangeShiftR: Lynx reintroduction
-# RTG Response summer school 2021
+# IBS2022 Half-day workshop on RangeShiftR
 # (c) Damaris Zurell, Anne Malchow, Univ. Potsdam
 # Full tutorial available here: https://damariszurell.github.io/EEC-QCB/RS3_lynx.html
 # More elaborate materials: https://rangeshifter.github.io/RangeshiftR-tutorials/ and https://damariszurell.github.io/EEC-QCB/

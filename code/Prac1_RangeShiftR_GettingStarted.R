@@ -1,5 +1,5 @@
 # Example RangeShiftR workflow
-# RTG Response summer school 2021
+# IBS2022 Half-day workshop on RangeShiftR
 # (c) Damaris Zurell, Anne Malchow, Univ. Potsdam
 # More elaborate materials: https://rangeshifter.github.io/RangeshiftR-tutorials/ and https://damariszurell.github.io/EEC-QCB/
 
