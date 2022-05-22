@@ -12,4 +12,4 @@ Participants should bring a laptop with R installed. RangeshiftR requires R 3.6.
   * RangeShiftR tutorials: https://rangeshifter.github.io/RangeshiftR-tutorials/
   * Teaching material on RangeShiftR case studies: https://damariszurell.github.io/EEC-QCB/
 * Manual:
-  * RangeShifter manual: https://tinyurl.com/y58nwgy3 
+  * RangeShifter manual: https://tinyurl.com/RangeShifter-ManuelEN  
