@@ -1,6 +1,6 @@
 # IBS2022 Vancouver: RangeShiftR workshop
 
-Half-day workshop 8-Jan-2022
+Half-day workshop 2-June-2022
 
 Instructors: Damaris Zurell and Anne Malchow (Univ. Potsdam), and Greta Bocedi and Justin Travis (Univ. Aberdeen)
 
