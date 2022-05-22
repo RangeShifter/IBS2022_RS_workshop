@@ -21,7 +21,7 @@ library(raster)   # Manipulate geographic data
 #--------------------------------------------------------------------------------
 
 # Set your working directory to the workshop folder, e.g 
-setwd('Response_Summerschool/PopModels')
+setwd('IBS2022_RS_workshop')
 
 #--------------------------------------------------------------------------------
 #

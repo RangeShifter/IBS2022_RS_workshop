@@ -21,6 +21,7 @@ library(raster)   # Manipulate geographic data
 library(rasterVis)    # Enhanced visualization of geographic data
 library(ggplot2)    # Advanced visualisation
 library(tidyverse)  # family of data science packages
+library(RColorBrewer) # Color Brewer Palettes
 
 
 #--------------------------------------------------------------------------------
@@ -30,7 +31,7 @@ library(tidyverse)  # family of data science packages
 #--------------------------------------------------------------------------------
 
 # Set your working directory to the workshop folder, e.g 
-setwd('Response_Summerschool/PopModels')
+setwd('IBS2022_RS_workshop')
 
 
 
@@ -299,12 +300,14 @@ RunRS(s_29, dirpath)
 RunRS(s_29_15, dirpath)
 
 
-#-----------------
-# PLOT RESULTS
-#-----------------
+#--------------------------------------------------------------------------------
+#
+#         RangeShiftR RESULTS
+# 
+#--------------------------------------------------------------------------------
 
 #---------------
-# Single-site reintroduction
+# Single-site reintroduction: population and range dynamics
 #---------------
 
 # general output of population size + occupancy
@@ -332,7 +335,7 @@ levelplot(col_stats_29$map_col_time, margin=F, scales=list(draw=FALSE), at=c(-9,
 
 
 #---------------
-# Multi-site reintroduction
+# Multi-site reintroduction: population and range dynamics
 #---------------
 
 # general output of population size + occupancy
@@ -392,7 +395,7 @@ Calc_ExtTime <- function(pop_df) {
 # We can now use these function on our simulation output.
 
 #---------------
-# Single-site reintroduction
+# Single-site reintroduction: extinction probability
 #---------------
 
 # read population output file into a data frame
@@ -411,7 +414,7 @@ Calc_ExtTime(pop_29)
 
 
 #---------------
-# Multi-site reintroduction
+# Multi-site reintroduction: extinction probability
 #---------------
 
 # read population output file into a data frame
@@ -433,3 +436,107 @@ extProb_scens <- bind_rows(extProb_29 %>% add_column(Scenario = "10 ind. Kintyre
 ggplot(data = extProb_scens, mapping = aes(x = Year, y = extProb, color=Scenario)) + 
   geom_line(size=2) +
   ylim(0,1)
+
+
+#--------------------------------------------------------------------------------
+#
+#         RangeShiftR EXERCISES
+# 
+#--------------------------------------------------------------------------------
+
+#---------------
+# Exercise 1: local sensitivity analysis
+#---------------
+
+# Run a local sensitivity analysis on one of the survival parameters or emigration probabilities, varying the parameter by +/- 5%. Compare abundance dynamics between simulations and extinction probabilities. 
+
+
+#---------------
+# Exercise 2: dynamic landscapes
+#---------------
+
+# Let's assume that lynx establishment will be facilitated by restoring woodlands, specifically by transforming grasslands to woodlands
+# For an elaborate tutorial on dynamic landscapes, see: https://rangeshifter.github.io/RangeshiftR-tutorials/tutorial_3.html
+
+# Read in grassland patch files
+grassland_patches <- raster(paste0(dirpath,'Inputs/grassland_patchIDs_1000.asc'))
+
+plot(grassland_patches)
+
+# Let's assume every ten years 5 grassland patches can be converted to woodland
+grassland_IDs <- sort(unique(values(grassland_patches)))
+
+# Time slice t2: 
+set.seed(56789)   # predefined seed for random number generator for replicability of results
+convert_patchesID <- sample(grassland_IDs[-1], 5) # Randomly select 5 patches for conversion (leave out patches with ID=0 which correspond to matrix)
+
+patches_t2 <- patches # new patch layer for time period t2
+landsc_t2 <- landsc   # new landscape layer for t2: grasslands have code=6 and are converted into code=7
+
+# Loop through selected patches to convert
+for (i in seq_len(length(convert_patchesID)))
+{
+  max_woodland_ID <- max(unique(values(patches_t2)), na.rm=T) # retrieve max patch ID
+  
+  # Add new patches to woodland map:
+  values(patches_t2)[values(grassland_patches)==convert_patchesID[i] & !is.na(values(patches_t2))] <- max_woodland_ID + 1
+  
+  # Change habitat code in landscape map:
+  values(landsc_t2)[values(grassland_patches)==convert_patchesID[i] & !is.na(values(landsc_t2))] <- 7
+}
+
+# Plot patch maps
+spplot(stack(patches,patches_t2))
+
+# Write raster layers to Inputs folder:
+writeRaster(patches_t2, paste0(dirpath, "Inputs/woodland_patchIDs_1000_t2.asc"),datatype= 'INT2S',  NAflag = -999, overwrite=T)
+writeRaster(landsc_t2, paste0(dirpath, "Inputs/LCM_Scotland_t2.asc"),datatype= 'INT2S',  NAflag = -999, overwrite=T)
+
+#--------------
+
+# Set Landscape module:
+# Dynamic landscape: several maps are loaded and the argument "DynamicLandYears" is provided
+land_dyn <- ImportedLandscape(LandscapeFile = c("LCM_Scotland_2015_1000.asc", "LCM_Scotland_t2.asc"),
+                              PatchFile = c("woodland_patchIDs_1000.asc", "woodland_patchIDs_1000_t2.asc"),
+                              DynamicLandYears = c(0,10),
+                              Resolution = 1000,
+                              Nhabitats = 10,
+                              K_or_DensDep = c(0, 0, 0, 0, 0, 0, 0.000285, 0, 0, 0)
+                              )
+
+
+# Define new parameters master (all other modules and settings remain the same)
+# RangeShifter parameter master object for single-site reintroduction and dynamic landscape:
+s_29_dyn <- RSsim(batchnum = 5, land = land_dyn, demog = demo, dispersal = disp, simul = sim, init = init_29, seed = 324135)
+
+#-----------------
+# Run dynamic landscape simulations
+
+# Run single-site simulations
+RunRS(s_29_dyn, dirpath)
+
+#-----------------
+# results of dynamic landscape simulations:
+# general output of population size + occupancy
+
+par(mfrow=c(1,2))
+plotAbundance(s_29_dyn,dirpath,sd=T, rep=F)
+plotOccupancy(s_29_dyn, dirpath, sd=T, rep=F)
+
+# Compare static and dynamic landscape
+abund_scen<- bind_rows(
+  # Scenario static landscape:
+  # The function readRange() runs in the background of plotAbundance(). Here, we extract abundances per scenario by hand.
+  readRange(s_29,dirpath) %>%
+    group_by(Year) %>%
+    summarise(Abundance = mean(NInds), sd = sd(NInds)) %>% add_column(Scenario = "1 - Static"), 
+  # Scenario dynamic woodland restoration:
+  readRange(s_29_dyn,dirpath) %>%
+    group_by(Year) %>%
+    summarise(Abundance = mean(NInds), sd = sd(NInds)) %>% add_column(Scenario = "2 - Restoration")
+)
+# Plot abundance
+ggplot(data = abund_scen, mapping = aes(x = Year, y = Abundance,  color=Scenario)) + 
+  geom_line(size=2) +
+  geom_ribbon(aes(ymin=Abundance-sd, ymax=Abundance+sd), linetype=2, alpha=0.1)
+
