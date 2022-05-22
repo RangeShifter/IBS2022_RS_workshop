@@ -1,6 +1,6 @@
 # IBS2022 Vancouver: RangeShiftR workshop
 
-Half-day workshop 8-Jan-2022
+Half-day workshop 2-June-2022
 
 Instructors: Damaris Zurell and Anne Malchow (Univ. Potsdam), and Greta Bocedi and Justin Travis (Univ. Aberdeen)
 
@@ -12,4 +12,4 @@ Participants should bring a laptop with R installed. RangeshiftR requires R 3.6.
   * RangeShiftR tutorials: https://rangeshifter.github.io/RangeshiftR-tutorials/
   * Teaching material on RangeShiftR case studies: https://damariszurell.github.io/EEC-QCB/
 * Manual:
-  * RangeShifter manual: https://tinyurl.com/y58nwgy3 
+  * RangeShifter manual: https://tinyurl.com/RangeShifter-ManuelEN  
