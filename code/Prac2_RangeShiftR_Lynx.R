@@ -1,6 +1,6 @@
 # Example RangeShiftR: Lynx reintroduction
 # IBS2022 Half-day workshop on RangeShiftR
-# (c) Damaris Zurell, Anne Malchow, Univ. Potsdam
+# (c) Jette Reeg, Damaris Zurell, Anne Malchow, Univ. Potsdam
 # Full tutorial available here: https://damariszurell.github.io/EEC-QCB/RS3_lynx.html
 # More elaborate materials: https://rangeshifter.github.io/RangeshiftR-tutorials/ and https://damariszurell.github.io/EEC-QCB/
 # Full RangeShifter manual: https://raw.githubusercontent.com/RangeShifter/RangeShifter-software-and-documentation/master/RangeShifter_v2.0_UserManual.pdf
