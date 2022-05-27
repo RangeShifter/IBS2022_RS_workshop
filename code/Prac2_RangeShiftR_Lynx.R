@@ -6,13 +6,16 @@
 # Full RangeShifter manual: https://raw.githubusercontent.com/RangeShifter/RangeShifter-software-and-documentation/master/RangeShifter_v2.0_UserManual.pdf
 
 
-# This practical illustrates how spatially-explicit individual-based models like RangeShiftR can aid effective decision making for species reintroductions. As example, we re-implement a case study on the reintroduction of Eurasian lynx (Lynx lynx) to Scotland (Ovenden et al. 2019; https://doi.org/10.1016/j.biocon.2019.03.035). The original study was also based on RangeShifter, which makes reimplementation straight forward. We use the same parameters by and large but on a slightly coarser resolution. In line with Ovenden et al. (2019), we simulate lynx range expansion and population viability from different potential reintroduction sites.
+# This practical illustrates how spatially-explicit individual-based models like RangeShiftR can aid effective decision making for species reintroductions.
+# As example, we re-implement a case study on the reintroduction of Eurasian lynx (Lynx lynx) to Scotland (Ovenden et al. 2019; https://doi.org/10.1016/j.biocon.2019.03.035).
+# The original study was also based on RangeShifter, which makes reimplementation straight forward. We use the same parameters by and large but on a slightly coarser resolution.
+# In line with Ovenden et al. (2019), we simulate lynx range expansion and population viability from different potential reintroduction sites.
 
 
 #--------------------------------------------------------------------------------
 #
 #         Load packages
-# 
+#
 #--------------------------------------------------------------------------------
 
 library(RangeShiftR)  # RangeShiftR package for spatially-explicit eco-evolutionary modelling
@@ -27,10 +30,10 @@ library(RColorBrewer) # Color Brewer Palettes
 #--------------------------------------------------------------------------------
 #
 #         SET WORKING DRECTORY
-# 
+#
 #--------------------------------------------------------------------------------
 
-# Set your working directory to the workshop folder, e.g 
+# Set your working directory to the workshop folder, e.g
 setwd('IBS2022_RS_workshop')
 
 
@@ -38,7 +41,7 @@ setwd('IBS2022_RS_workshop')
 #--------------------------------------------------------------------------------
 #
 #         PREPARE FOLDER STRUCTURE
-# 
+#
 #--------------------------------------------------------------------------------
 
 # We recommend a single models folder in your project folder and model subfolders for the different RangeShiftR practicals
@@ -50,7 +53,9 @@ if(!file.exists("models/Lynx")) {
   dir.create("models/Lynx", showWarnings = TRUE) }
 
 
-# The standard workflow of RangeShiftR is to load input maps from ASCII raster files and to write all simulation output into text files. Therefore, the specified working directory needs to have a certain folder structure: It should contain 3 subfolders named "Inputs", "Outputs" and "Output_Maps".
+# The standard workflow of RangeShiftR is to load input maps from ASCII raster files and to write all simulation output into
+# text files. Therefore, the specified working directory needs to have a certain folder structure: It should contain 3 subfolders
+# named "Inputs", "Outputs" and "Output_Maps".
 
 # relative path from working directory:
 dirpath = "models/Lynx/"
@@ -70,7 +75,7 @@ if(!file.exists(paste0(dirpath,"Output_Maps"))) {
 #--------------------------------------------------------------------------------
 #
 #         RangeShiftR MODULES
-# 
+#
 #--------------------------------------------------------------------------------
 
 
@@ -78,7 +83,8 @@ if(!file.exists(paste0(dirpath,"Output_Maps"))) {
 # LANDSCAPE
 #---------------
 
-# The original lynx model was run on a 100 m landscape grid. Here, we use a spatial resolution of 1 km to speed up computations, for illustrative purposes.
+# The original lynx model was run on a 100 m landscape grid. Here, we use a spatial resolution of 1 km to speed up computations,
+# for illustrative purposes.
 
 
 #---------------
@@ -98,13 +104,16 @@ landsc.f <- as.factor(landsc)
 # add the land cover classes to the raster attribute table
 (rat <- levels(landsc.f)[[1]])
 
-rat[["land-use"]] <- c("salt water", "arable + horticulture", "freshwater", "built-up areas + gardens", "inland rock", "grasslands", "woodland", "supra-/littoral sediment", "marsh, swamp", "heath")
+rat[["land-use"]] <- c("salt water", "arable + horticulture", "freshwater", "built-up areas + gardens", "inland rock",
+                       "grasslands", "woodland", "supra-/littoral sediment", "marsh, swamp", "heath")
 levels(landsc.f) <- rat
 
 levelplot(landsc.f, margin=F, scales=list(draw=FALSE), col.regions=brewer.pal(n = 10, name = "Spectral"))
 
 
-# We will run RangeShiftR as patch-based model and thus need a map of suitable patches (vs. unsuitable matrix). We have prepared a map of woodland patches from the above land cover map and will read this in. These woodland patches constitute the suitable breeding patches for the Eurasian lynx. In total, we have identified 39 suitable patches of varying size.
+# We will run RangeShiftR as patch-based model and thus need a map of suitable patches (vs. unsuitable matrix).
+# We have prepared a map of woodland patches from the above land cover map and will read this in. These woodland patches constitute
+# the suitable breeding patches for the Eurasian lynx. In total, we have identified 39 suitable patches of varying size.
 
 # Read in woodland patch files
 patches <- raster(paste0(dirpath,'Inputs/woodland_patchIDs_1000.asc'))
@@ -127,19 +136,24 @@ plot(patches,axes=F, legend=F, col = c('grey',rep(brewer.pal(n = 10, name = "Pai
 patches_pol <- rasterToPolygons(patches, dissolve=T) # Makes spatial polygons
 text(patches_pol,labels=patches_pol@data$woodland_patchIDs_1000)
 
-# The following patch IDs roughly correspond to the reintroduction sites used in (Ovenden et al. 2019): 29 = Kintyre Peninsula; 35 = Kielder Forest; 15 = Aberdeenshire. Note that the patches are smaller and more isolated than in the original study.
+# The following patch IDs roughly correspond to the reintroduction sites used in (Ovenden et al. 2019):
+# 29 = Kintyre Peninsula; 35 = Kielder Forest; 15 = Aberdeenshire.
+# Note that the patches are smaller and more isolated than in the original study.
 
 
 #---------------
 # Landscape parameters:
 #---------------
 
-# We can now define the landscape parameters. 
-# For the patch-based model, we have to provide a (i) grid-based landscape map that contains the different habitat classes used to set the per-step mortality in the dispersal module, and (ii) the patch file used to define the suitable breeding patches. 
-# Also, we have to provide the parameter K_or_DensDep for each habitat class in the landscape file. This parameter describes the strength of density dependence 1/b (Bocedi et al. 2020; Malchow et al. 2020). Ovenden et al. (2019) specified 1/b with 0.000285 ind/ha, meaning that an adult individual will defend a territory of c. 3509 ha or 35 km2.
+# We can now define the landscape parameters.
+# For the patch-based model, we have to provide a (i) grid-based landscape map that contains the different habitat classes used to
+# set the per-step mortality in the dispersal module, and (ii) the patch file used to define the suitable breeding patches.
+# Also, we have to provide the parameter K_or_DensDep for each habitat class in the landscape file. This parameter describes the
+# strength of density dependence 1/b (Bocedi et al. 2020; Malchow et al. 2020). Ovenden et al. (2019) specified 1/b with 0.000285 ind/ha,
+# meaning that an adult individual will defend a territory of c. 3509 ha or 35 km2.
 
 land <- ImportedLandscape(LandscapeFile = "LCM_Scotland_2015_1000.asc",
-                          PatchFile = "woodland_patchIDs_1000.asc", 
+                          PatchFile = "woodland_patchIDs_1000.asc",
                           Resolution = 1000,
                           Nhabitats = 10,
                           K_or_DensDep = c(0, 0, 0, 0, 0, 0, 0.000285, 0, 0, 0)
@@ -150,10 +164,14 @@ land <- ImportedLandscape(LandscapeFile = "LCM_Scotland_2015_1000.asc",
 # DEMOGRAPHY
 #---------------
 
-# All demographic parameters are listed in Table 2 of Ovenden et al. (2019). The demographic model comprises three stages: first-year juveniles (0–12 months), non-breeding sub-adults (12–24 months) and breeding adults (>24months). To properly simulate natal dispersal, we have to set an additional dummy stage 0 (dispersing juveniles) in RangeShiftR. After dispersal, dispersing juveniles (stage 0) will be assigned to stage 1 (first-year juveniles). 
+# All demographic parameters are listed in Table 2 of Ovenden et al. (2019). The demographic model comprises three stages:
+# first-year juveniles (0–12 months), non-breeding sub-adults (12–24 months) and breeding adults (>24months).
+# To properly simulate natal dispersal, we have to set an additional dummy stage 0 (dispersing juveniles) in RangeShiftR.
+# After dispersal, dispersing juveniles (stage 0) will be assigned to stage 1 (first-year juveniles).
 
 # Transition matrix
-(trans_mat <- matrix(c(0,1,0,0,0,0, 0.53, 0,0, 0, 0, 0.63, 5,0, 0, 0.8), nrow = 4, byrow = F))  # stage 0: dispersing newborns; stage 1 : first-year juveniles; stage 2: non-breeding sub-adults; stage 3: breeding adults
+# stage 0: dispersing newborns; stage 1 : first-year juveniles; stage 2: non-breeding sub-adults; stage 3: breeding adults
+(trans_mat <- matrix(c(0,1,0,0,0,0, 0.53, 0,0, 0, 0, 0.63, 5,0, 0, 0.8), nrow = 4, byrow = F))
 
 # Define the stage structure
 stg <- StageStructure(Stages = 4, # four stages including dispersing juveniles
@@ -163,12 +181,14 @@ stg <- StageStructure(Stages = 4, # four stages including dispersing juveniles
 )
 
 # Plot the vital rates against different density levels
+# (Here, the survival probability is shown as the total survival (including those that stayed in the same stage as well as those that developed)
+# and the development probability is shown as the probability of having developed given survival.)
 plotProbs(stg)
 
 # Define the demography module
-demo <- Demography(StageStruct = stg, 
+demo <- Demography(StageStruct = stg,
                    ReproductionType = 1, # simple sexual model
-                   PropMales = 0.5) 
+                   PropMales = 0.5)
 
 
 
@@ -176,18 +196,25 @@ demo <- Demography(StageStruct = stg,
 # DISPERSAL
 #---------------
 
-# Ovenden et al. (2019) considered Eurasian lynx as poor dispersers with some sex bias in the dispersal probability. Specifically, the males were assigned a higher emigration probability compared to females.
+# Ovenden et al. (2019) considered Eurasian lynx as poor dispersers with some sex bias in the dispersal probability.
+# Specifically, the males were assigned a higher emigration probability compared to females.
+
+# To indicate, that the emigration probability varies among stages and sexes, we set StageDep = T and SexDep = T. In this case,
+# the parameter 'EmigProb' expects a matrix with one row for each stage-sex combination. Further, we enable density-dependent
+# emigration probability by setting DensDep = T. Therefore, each row must contain the three parameters (D0, alpha, beta) that
+# control the shape of the emigration-density relationship.
 
 emig <- Emigration(DensDep=T, StageDep=T, SexDep = T,
                    EmigProb = cbind(c(0,0,1,1,2,2,3,3),
                                     c(0,1,0,1,0,1,0,1),
                                     c(0.4, 0.9, 0, 0, 0, 0, 0, 0),
-                                    c(10, 10, 0, 0, 0, 0, 0, 0), 
+                                    c(10, 10, 0, 0, 0, 0, 0, 0),
                                     c(1, 1, 0, 0, 0, 0, 0, 0)) ) # only emigration of juveniles, females higher than males
 
 
-# The transfer phase of dispersal was modelled using a stochastic movement simulator (SMS). 
-# Individuals move stepwise from cell to cell and the direction chosen at each step is determined by the land cover costs (specified for each habitat class), the species’ perceptual range (PR) and directional persistence (DP). 
+# The transfer phase of dispersal was modelled using a stochastic movement simulator (SMS).
+# Individuals move step-wise from cell to cell and the direction chosen at each step is determined by the land cover costs
+# (specified for each habitat class), the species’ perceptual range (PR) and directional persistence (DP).
 transfer <- SMS(PR = 1, # Perceptual range in number of cells
                 PRMethod = 2, # Harmonic mean used to quantify movement cost within perceptual range
                 MemSize = 5, # number of steps remembered when applying directional persistence.
@@ -196,7 +223,7 @@ transfer <- SMS(PR = 1, # Perceptual range in number of cells
                 StepMort = c(0.9999, 0.0002, 0.0005, 0.007, 0.00001, 0.00001, 0, 0.00001, 0.00001, 0.00001)) # per step mortality per habitat class
 
 
-# The settlement parameters are identifcal for both sexes except that males have to find a female to settle. 
+# The settlement parameters are identical for both sexes except that males have to find a female to settle.
 settle <- Settlement(StageDep = F,
                      SexDep = T,
                      Settle = cbind(c(0, 1), c(1.0, 1.0), c(-10, -10), c(1, 1)), # here no difference between sexes
@@ -208,7 +235,7 @@ settle <- Settlement(StageDep = F,
 # Define Dispersal module
 disp <-  Dispersal(Emigration = emig,
                    Transfer = transfer,
-                   Settlement = settle) 
+                   Settlement = settle)
 
 # plot parameters
 plotProbs(disp@Emigration)
@@ -218,14 +245,16 @@ plotProbs(disp@Emigration)
 # INITIALISATION
 #---------------
 
-# Ovenden et al. (2019) implemented single-site reintroductions with 10 individuals per site, and multi-site reintroduction with 32 individuals across two sites.
+# Ovenden et al. (2019) implemented single-site reintroductions with 10 individuals per site,
+# and multi-site reintroduction with 32 individuals across two sites.
 
 
 #---------------
 # Single-site reintroduction
 #---------------
 
-# We define one scenario where we reintroduce 10 individuals to the patch 29 on the Kintyre Pensinsula. First, we have to prepare a text file specifying the number of initial individuals per patch and per sex and stage.
+# We define one scenario where we reintroduce 10 individuals to the patch 29 on the Kintyre Pensinsula.
+# First, we have to prepare a text file specifying the number of initial individuals per patch and per sex and stage.
 
 # prepare dataframe for InitIndsFile
 (init_df_29 <- data.frame(Year=0,Species=0,PatchID=29,Ninds=c(5,5),Sex=c(0,1),Age=3,Stage=3))
@@ -262,7 +291,8 @@ init_29_15 <- Initialise(InitType = 2,       # from loaded species distribution 
 # SIMULATION
 #-----------------
 
-# This time, we set a more reasonable number of replicates with 100 runs and simulate range expansion over 100 years. We specify that output should be stored for each year.
+# This time, we set a more reasonable number of replicates with 100 runs and simulate range expansion over 100 years.
+# We specify that output should be stored for each year.
 
 # Simulations
 RepNb <- 100
@@ -279,7 +309,8 @@ sim <- Simulation(Simulation = 0, # ID
 # PARAMETER MASTER
 #-----------------
 
-# When defining the parameter master objects for our two scenarios, we take care to provide two different batchnum to avoid any overwriting of file output. We set a seed for easy replicability of results such that all of us should obtain the same results.
+# When defining the parameter master objects for our two scenarios, we take care to provide two different 'batchnum' to avoid any overwriting of file output.
+# We set a seed for easy replicability of results such that all of us should obtain the same results.
 
 # RangeShifter parameter master object for single-site reintroduction
 s_29 <- RSsim(batchnum = 1, land = land, demog = demo, dispersal = disp, simul = sim, init = init_29, seed = 324135)
@@ -303,7 +334,7 @@ RunRS(s_29_15, dirpath)
 #--------------------------------------------------------------------------------
 #
 #         RangeShiftR RESULTS
-# 
+#
 #--------------------------------------------------------------------------------
 
 #---------------
@@ -316,7 +347,8 @@ plotAbundance(s_29,dirpath,sd=T, rep=F)
 plotOccupancy(s_29, dirpath, sd=T, rep=F)
 
 
-# To obtain a deeper understanding of the reintroduction success, we look at different colonisation metrics offered in the function ColonisationStats(). Specifically, we calculate colonisation probability for year 100 (the probability of a patch to be occupied after 100 years) and the time to colonisation.
+# To obtain a deeper understanding of the reintroduction success, we look at different colonisation metrics offered in the function ColonisationStats().
+# Specifically, we calculate colonisation probability for year 100 (the probability of a patch to be occupied after 100 years) and the time to colonisation.
 
 # Colonisation metrics, the computation of these may take some time
 col_stats_29 <- ColonisationStats(s_29, dirpath, years = 100, maps = T)
@@ -357,16 +389,18 @@ levelplot(col_stats_29_15$map_col_time, margin=F, scales=list(draw=FALSE), at=c(
 # EXTINCTION PROBABILITY
 #-----------------
 
-# Extinction probability at a specific time can be defined as the proportion of replicate simulation runs without viable population at a specific point in time. We can extract this information from the population output file.
-# Accordingly, the mean time to extinction can then be defined as the mean time across all replicates when the population went extinct. Again, this information can be extracted from the population output file.
+# Extinction probability at a specific time can be defined as the proportion of replicate simulation runs without viable population at a specific point in time.
+# We can extract this information from the population output file.
+# Accordingly, the mean time to extinction can then be defined as the mean time across all replicates when the population went extinct.
+# Again, this information can be extracted from the population output file.
 
-# For convenience,  we define two own functions (using the construct function()) for calculating extinction probability and mean time to extinction.
+# For convenience, we define two own functions (using the construct function()) for calculating extinction probability and mean time to extinction.
 
 # Define a function for calculating extinction probability
 Calc_ExtProb <- function(pop_df,s) {
   require(dplyr)
   require(tidyr)
-  
+
   pop_df %>%
     group_by(Rep,Year) %>%
     # Sum individuals over all cells per year and replicate
@@ -382,17 +416,18 @@ Calc_ExtProb <- function(pop_df,s) {
 Calc_ExtTime <- function(pop_df) {
   require(dplyr)
   require(tidyr)
-  
+
   pop_df %>%
     group_by(Rep,Year) %>%
-    # Sum individuals over all cells per year and replicate    
-    summarise(sumPop = sum(NInd), .groups='keep') %>% 
+    # Sum individuals over all cells per year and replicate
+    summarise(sumPop = sum(NInd), .groups='keep') %>%
     # Identify in which year they go extinct
-    filter(sumPop==0) %>% 
+    filter(sumPop==0) %>%
     pull(Year) %>% mean
 }
 
 # We can now use these function on our simulation output.
+
 
 #---------------
 # Single-site reintroduction: extinction probability
@@ -405,7 +440,7 @@ pop_29 <- readPop(s_29, dirpath)
 extProb_29 <- Calc_ExtProb(pop_29,s_29)
 
 # Plot extinction probabilities
-ggplot(data = extProb_29, mapping = aes(x = Year, y = extProb)) + 
+ggplot(data = extProb_29, mapping = aes(x = Year, y = extProb)) +
   geom_line() +
   ylim(0,1)
 
@@ -433,29 +468,31 @@ Calc_ExtTime(pop_29_15)
 extProb_scens <- bind_rows(extProb_29 %>% add_column(Scenario = "10 ind. Kintyre "),
                            extProb_29_15 %>% add_column(Scenario = "32 ind. Kintyre + Aberdeenshire"))
 
-ggplot(data = extProb_scens, mapping = aes(x = Year, y = extProb, color=Scenario)) + 
+ggplot(data = extProb_scens, mapping = aes(x = Year, y = extProb, color=Scenario)) +
   geom_line(size=2) +
   ylim(0,1)
+
 
 
 #--------------------------------------------------------------------------------
 #
 #         RangeShiftR EXERCISES
-# 
+#
 #--------------------------------------------------------------------------------
 
 #---------------
 # Exercise 1: local sensitivity analysis
 #---------------
 
-# Run a local sensitivity analysis on one of the survival parameters or emigration probabilities, varying the parameter by +/- 5%. Compare abundance dynamics between simulations and extinction probabilities. 
+# Run a local sensitivity analysis on one of the survival parameters or emigration probabilities, varying the parameter by +/- 5%.
+# Compare abundance dynamics and extinction probabilities between the simulations.
 
 
 #---------------
 # Exercise 2: dynamic landscapes
 #---------------
 
-# Let's assume that lynx establishment will be facilitated by restoring woodlands, specifically by transforming grasslands to woodlands
+# Let's assume that lynx establishment will be facilitated by restoring woodlands, specifically by transforming grasslands to woodlands.
 # For an elaborate tutorial on dynamic landscapes, see: https://rangeshifter.github.io/RangeshiftR-tutorials/tutorial_3.html
 
 # Read in grassland patch files
@@ -466,7 +503,7 @@ plot(grassland_patches)
 # Let's assume every ten years 5 grassland patches can be converted to woodland
 grassland_IDs <- sort(unique(values(grassland_patches)))
 
-# Time slice t2: 
+# Time slice t2:
 set.seed(56789)   # predefined seed for random number generator for replicability of results
 convert_patchesID <- sample(grassland_IDs[-1], 5) # Randomly select 5 patches for conversion (leave out patches with ID=0 which correspond to matrix)
 
@@ -477,10 +514,10 @@ landsc_t2 <- landsc   # new landscape layer for t2: grasslands have code=6 and a
 for (i in seq_len(length(convert_patchesID)))
 {
   max_woodland_ID <- max(unique(values(patches_t2)), na.rm=T) # retrieve max patch ID
-  
+
   # Add new patches to woodland map:
   values(patches_t2)[values(grassland_patches)==convert_patchesID[i] & !is.na(values(patches_t2))] <- max_woodland_ID + 1
-  
+
   # Change habitat code in landscape map:
   values(landsc_t2)[values(grassland_patches)==convert_patchesID[i] & !is.na(values(landsc_t2))] <- 7
 }
@@ -529,14 +566,14 @@ abund_scen<- bind_rows(
   # The function readRange() runs in the background of plotAbundance(). Here, we extract abundances per scenario by hand.
   readRange(s_29,dirpath) %>%
     group_by(Year) %>%
-    summarise(Abundance = mean(NInds), sd = sd(NInds)) %>% add_column(Scenario = "1 - Static"), 
+    summarise(Abundance = mean(NInds), sd = sd(NInds)) %>% add_column(Scenario = "1 - Static"),
   # Scenario dynamic woodland restoration:
   readRange(s_29_dyn,dirpath) %>%
     group_by(Year) %>%
     summarise(Abundance = mean(NInds), sd = sd(NInds)) %>% add_column(Scenario = "2 - Restoration")
 )
 # Plot abundance
-ggplot(data = abund_scen, mapping = aes(x = Year, y = Abundance,  color=Scenario)) + 
+ggplot(data = abund_scen, mapping = aes(x = Year, y = Abundance,  color=Scenario)) +
   geom_line(size=2) +
   geom_ribbon(aes(ymin=Abundance-sd, ymax=Abundance+sd), linetype=2, alpha=0.1)
 
