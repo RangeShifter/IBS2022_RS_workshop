@@ -1,6 +1,6 @@
 # Example RangeShiftR workflow
 # IBS2022 Half-day workshop on RangeShiftR
-# (c) Damaris Zurell, Anne Malchow, Univ. Potsdam
+# (c) Anne Malchow, Damaris Zurell, Univ. Potsdam
 # More elaborate materials: https://rangeshifter.github.io/RangeshiftR-tutorials/ and https://damariszurell.github.io/EEC-QCB/
 
 #--------------------------------------------------------------------------------
